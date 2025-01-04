@@ -1,3 +1,10 @@
 /venv/*
 
 /.idea/*
+
+.env
+
+*/config.json
+
+*/__pycache__
+.env
