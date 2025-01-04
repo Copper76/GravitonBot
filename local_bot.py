@@ -198,18 +198,6 @@ class LocalBot:
                     location = "Placeholder link"
             else:
                 location = self.config["channel_dict"][meeting_type_name]
-            # elif meeting_type_name == "Team":
-            #     location = self.get_channel_id_from_name("Dev")
-            # elif meeting_type_name == "Design":
-            #     location = self.get_channel_id_from_name("Design")
-            # elif meeting_type_name == "Programming":
-            #     location = self.get_channel_id_from_name("Programming - The Git Pit")
-            # elif meeting_type_name == "Art":
-            #     location = self.get_channel_id_from_name("Art")
-            # elif meeting_type_name == "Audio":
-            #     location = self.get_channel_id_from_name("Audio")
-            # else:
-            #     continue
 
             meeting_id = meeting["id"]
             discord_event_id = ""
@@ -227,32 +215,6 @@ class LocalBot:
 
         self.clean_meeting_dict(current_time)
         self.update_config()
-
-    def get_channel_id_from_name(self, channel_name):
-        """
-        Fetch the ID of a Discord channel by its name.
-
-        :param guild_id: The ID of the Discord guild (server)
-        :param channel_name: The name of the channel to find
-        :param bot_token: Your Discord bot token
-        :return: The channel ID if found, or None
-        """
-        if not channel_name:
-            return None
-
-        url = get_discord_channels_url(self.guild_id)
-
-        response = requests.get(url, headers=self.discord_headers)
-        if response.status_code == 200:
-            channels = response.json()
-            for channel in channels:
-                if channel["name"] == channel_name and channel["type"] == 2:
-                    return channel["id"]
-            print(f"Channel with name '{channel_name}' not found.")
-            return None
-        else:
-            print(f"Error fetching channels: {response.status_code}, {response.json()}")
-            return None
 
     def get_scheduled_event(self, event_id):
         """Fetch a specific scheduled event by its ID."""
