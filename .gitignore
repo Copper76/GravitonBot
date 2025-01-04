@@ -7,4 +7,5 @@
 */config.json
 
 */__pycache__
-.env
+
+config.json
