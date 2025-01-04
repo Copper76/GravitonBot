@@ -1,8 +1,11 @@
 import json
 from typing import Union, Dict
 
+import discord
 import requests
 import os
+
+from discord.ext import commands
 from dotenv import load_dotenv
 from util.util import get_env_var, get_notion_url, get_discord_event_url, get_discord_channels_url
 from datetime import datetime, timezone, timedelta
@@ -17,9 +20,14 @@ def check_valid(func):
     return wrapper
 
 
-class Bot:
-    def __init__(self):
+class LocalBot:
+    def __init__(self, command_prefix="!"):
         self.valid = False
+
+        intents = discord.Intents.all()
+
+        self.command_prefix = command_prefix
+        self.bot = commands.Bot(command_prefix=command_prefix, intents=intents)
 
         try:
             load_dotenv()
@@ -53,6 +61,9 @@ class Bot:
 
         except Exception as e:
             print(e)
+
+        self.add_listeners()
+        self.add_commands()
 
     def reset(self, hard: bool = False):
         self.valid = False
@@ -149,13 +160,14 @@ class Bot:
             print(f"Error creating event: {response.status_code}, {response.text}")
             return None
 
-    def process_meetings(self):
+    @check_valid
+    async def process_meetings(self):
         """Process meetings from Notion and create Discord events."""
         current_time = datetime.now()
 
         meetings = self.fetch_new_meetings()
         meeting_dict = self.config["meeting_dict"]
-        print(len(meetings))
+
         for meeting in meetings:
             properties = meeting["properties"]
             event_time = properties["Event time"]["date"]
@@ -184,18 +196,20 @@ class Bot:
                 location = properties.get("External link", {})["url"]
                 if not location:
                     location = "Placeholder link"
-            elif meeting_type_name == "Team":
-                location = self.get_channel_id_from_name("Dev")
-            elif meeting_type_name == "Design":
-                location = self.get_channel_id_from_name("Design")
-            elif meeting_type_name == "Programming":
-                location = self.get_channel_id_from_name("Programming - The Git Pit")
-            elif meeting_type_name == "Art":
-                location = self.get_channel_id_from_name("Art")
-            elif meeting_type_name == "Audio":
-                location = self.get_channel_id_from_name("Audio")
             else:
-                continue
+                location = self.config["channel_dict"][meeting_type_name]
+            # elif meeting_type_name == "Team":
+            #     location = self.get_channel_id_from_name("Dev")
+            # elif meeting_type_name == "Design":
+            #     location = self.get_channel_id_from_name("Design")
+            # elif meeting_type_name == "Programming":
+            #     location = self.get_channel_id_from_name("Programming - The Git Pit")
+            # elif meeting_type_name == "Art":
+            #     location = self.get_channel_id_from_name("Art")
+            # elif meeting_type_name == "Audio":
+            #     location = self.get_channel_id_from_name("Audio")
+            # else:
+            #     continue
 
             meeting_id = meeting["id"]
             discord_event_id = ""
@@ -262,8 +276,34 @@ class Bot:
         with open(self.config_file, "w") as file:
             json.dump(self.config, file, indent=4)
 
+    def add_listeners(self):
+        """Add event listeners to the bot."""
+
+        @self.bot.event
+        async def on_ready():
+            print(f"Talking Cactus is ready! Logged in as {self.bot.user}. Bot uses {self.bot.command_prefix} as prefix.")
+
+        @self.bot.event
+        async def on_command_error(ctx, error):
+            """Handle command errors."""
+            if isinstance(error, commands.CommandNotFound):
+                await ctx.send(f"Command not found. Use `{self.bot.command_prefix}help` to see available commands.")
+            else:
+                await ctx.send(f"An error occurred: {error}")
+
+    def add_commands(self):
+        @self.bot.command()
+        async def pull_meeting(ctx):
+            await self.process_meetings()
+            await ctx.send("Discord Event Updated")
+
+    def run(self):
+        """Run the bot."""
+        self.bot.run(self.bot_token)
+
+
 
 if __name__ == "__main__":
-    bot = Bot()
+    bot = LocalBot()
     # bot.reset(True)
     bot.process_meetings()
