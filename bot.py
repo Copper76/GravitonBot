@@ -54,7 +54,7 @@ class Bot:
         except Exception as e:
             print(e)
 
-    def reset(self, hard: bool=False):
+    def reset(self, hard: bool = False):
         self.valid = False
 
         try:
@@ -110,13 +110,14 @@ class Bot:
             print(response.text)
             return []
 
-    def modify_discord_event(self, title: str, start_time: str, event_end: str, meeting_type: int, location: str = "", event_id="") -> \
-    Union[
-        str, None]:
+    def modify_discord_event(self, title: str, start_time: str, event_end: str, meeting_type: int, location: str = "",
+                             event_id="") -> \
+            Union[str, None]:
         """Create a scheduled event in Discord."""
         event_url = get_discord_event_url(self.guild_id)
         if event_id:
             event_url = '/'.join([event_url, event_id])
+        print(event_url)
 
         # Convert Notion date to ISO format for Discord
         event_start = datetime.fromisoformat(start_time).astimezone(timezone.utc).isoformat()
@@ -130,22 +131,17 @@ class Bot:
         }
 
         if meeting_type == 2:
-            channel = self.get_channel_id_from_name(location)
-            if not channel:
-                event_data["entity_type"] = 3
-                event_data["entity_metadata"] = {
-                    "location": location
-                }
-            else:
-                event_data["channel_id"] = channel
+            event_data["channel_id"] = location
         else:
             event_data["entity_metadata"] = {
                 "location": location
             }
 
         print(event_data)
-
-        response = requests.post(event_url, headers=self.discord_headers, json=event_data)
+        if event_id:
+            response = requests.patch(event_url, headers=self.discord_headers, json=event_data)
+        else:
+            response = requests.post(event_url, headers=self.discord_headers, json=event_data)
         if response.status_code == 200:
             print(f"Event '{title}' created successfully!")
             return response.json()["id"]
@@ -168,7 +164,7 @@ class Bot:
             if not end_time:
                 time_object = datetime.fromisoformat(start_time.replace("Z", "+00:00")).replace(tzinfo=None)
                 time_object = time_object + timedelta(hours=1)
-                end_time = time_object.isoformat() # default to one hour if not specified
+                end_time = time_object.isoformat()  # default to one hour if not specified
             else:
                 time_object = datetime.fromisoformat(end_time.replace("Z", "+00:00")).replace(tzinfo=None)
             # no point dealing with past event
@@ -203,15 +199,18 @@ class Bot:
 
             meeting_id = meeting["id"]
             discord_event_id = ""
-            if meeting_id in meeting_dict and meeting_dict[meeting_id]["discord_event_time"] > current_time:
+            if meeting_id in meeting_dict and datetime.fromisoformat(
+                    meeting_dict[meeting_id]["discord_event_time"]).replace(tzinfo=None) > current_time:
                 discord_event = self.get_scheduled_event(meeting_dict[meeting_id]["discord_event_id"])
                 if discord_event:
                     discord_event_id = meeting_dict[meeting_id]["discord_event_id"]
-            discord_event_id = self.modify_discord_event(title, start_time, end_time, meeting_type, location, discord_event_id)
+            discord_event_id = self.modify_discord_event(title, start_time, end_time, meeting_type, location,
+                                                         discord_event_id)
 
             if discord_event_id:
                 self.config["meeting_dict"][meeting_id] = {"discord_event_id": discord_event_id,
-                                                           "discord_event_time": start_time}
+                                                           "discord_event_time": start_time.replace("Z", "+00:00")}
+
         self.clean_meeting_dict(current_time)
         self.update_config()
 
@@ -233,7 +232,7 @@ class Bot:
         if response.status_code == 200:
             channels = response.json()
             for channel in channels:
-                if channel["name"] == channel_name:
+                if channel["name"] == channel_name and channel["type"] == 2:
                     return channel["id"]
             print(f"Channel with name '{channel_name}' not found.")
             return None
@@ -255,8 +254,8 @@ class Bot:
 
     def clean_meeting_dict(self, current_time):
         meeting_dict: Dict = self.config["meeting_dict"]
-        for meeting_id, discord_event_info in meeting_dict:
-            if discord_event_info["discord_event_time"] < current_time:
+        for meeting_id, discord_event_info in meeting_dict.items():
+            if datetime.fromisoformat(discord_event_info["discord_event_time"]).replace(tzinfo=None) < current_time:
                 meeting_dict.pop(meeting_id)
 
     def update_config(self):
@@ -266,5 +265,5 @@ class Bot:
 
 if __name__ == "__main__":
     bot = Bot()
-    bot.reset(True)
+    # bot.reset(True)
     bot.process_meetings()

@@ -24,3 +24,4 @@ def get_discord_event_url(guild_id: str) -> str:
 
 def get_discord_channels_url(guild_id: str) -> str:
     return f"{get_discord_base_url(guild_id)}/channels"
+
