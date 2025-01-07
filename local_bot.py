@@ -91,10 +91,12 @@ class LocalBot:
             if (not os.path.exists(self.config_file)) or hard:
                 self.config = {"last_query_time": "2020-01-01T00:00:00.000Z",
                                "meeting_dict": {}}
-                self.update_config()
-
-            with open(self.config_file, "r") as file:
-                self.config = json.load(file)
+            else:
+                with open(self.config_file, "r") as file:
+                    self.config = json.load(file)
+                    self.config["last_query_time"] = "2020-01-01T00:00:00.000Z"
+                    self.config["Meeting_dict"] = {}
+            self.update_config()
 
             self.valid = True
 
@@ -187,8 +189,6 @@ class LocalBot:
             title_property = properties.get("Name", {}).get("title", [])
             if title_property:
                 title = " ".join([t["text"]["content"] for t in title_property if "text" in t])
-            attendees = properties.get("Attendees", {}).get("people", [])
-            attendees = [person.get("name", "Unknown") for person in attendees]
             meeting_type_name = properties.get("Type", {}).get("select", {}).get("name", "Unknown")
             meeting_type = 2
             if meeting_type_name == "External":
@@ -230,9 +230,12 @@ class LocalBot:
 
     def clean_meeting_dict(self, current_time):
         meeting_dict: Dict = self.config["meeting_dict"]
+        deleting_id = []
         for meeting_id, discord_event_info in meeting_dict.items():
             if datetime.fromisoformat(discord_event_info["discord_event_time"]).replace(tzinfo=None) < current_time:
-                meeting_dict.pop(meeting_id)
+                deleting_id.append(meeting_id)
+        for meeting_id in deleting_id:
+            meeting_dict.pop(meeting_id)
 
     def update_config(self):
         with open(self.config_file, "w") as file:
@@ -267,5 +270,5 @@ class LocalBot:
 
 if __name__ == "__main__":
     bot = LocalBot()
-    # bot.reset(True)
+    # bot.reset(False)
     bot.process_meetings()
