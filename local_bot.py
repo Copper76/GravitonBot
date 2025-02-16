@@ -21,7 +21,7 @@ def check_valid(func):
 
 
 class LocalBot:
-    def __init__(self, command_prefix="!"):
+    def __init__(self, command_prefix="c!"):
         self.valid = False
 
         intents = discord.Intents.all()
@@ -90,12 +90,14 @@ class LocalBot:
             self.config_file = get_env_var("CONFIG_FILE")
             if (not os.path.exists(self.config_file)) or hard:
                 self.config = {"last_query_time": "2020-01-01T00:00:00.000Z",
-                               "meeting_dict": {}}
+                               "meeting_dict": {},
+                               "ip_address": ""}
             else:
                 with open(self.config_file, "r") as file:
                     self.config = json.load(file)
                     self.config["last_query_time"] = "2020-01-01T00:00:00.000Z"
                     self.config["Meeting_dict"] = {}
+                    self.config["ip_address"] = ""
             self.update_config()
 
             self.valid = True
@@ -228,6 +230,20 @@ class LocalBot:
             print(f"Error fetching event: {response.status_code}, {response.json()}")
             return None
 
+    async def get_ip(self, ctx, v4=True):
+        try:
+            if (v4):
+                received_ip = requests.get("https://api4.ipify.org?format=json").json()['ip']
+            else:
+                received_ip = requests.get("https://ifconfig.me").text.strip()
+            await ctx.send(received_ip)
+            if not "ip_address" not in self.config or received_ip != self.config["ip_address"]:
+                self.config["ip_address"] = received_ip
+                self.update_config()
+            await ctx.send(self.config["ip_address"])
+        except Exception as e:
+            await ctx.send(f"Error fetching public IP Contact Bill or Cuneyd")
+
     def clean_meeting_dict(self, current_time):
         meeting_dict: Dict = self.config["meeting_dict"]
         deleting_id = []
@@ -257,10 +273,18 @@ class LocalBot:
                 await ctx.send(f"An error occurred: {error}")
 
     def add_commands(self):
-        @self.bot.command()
+        @self.bot.command(name="meeting", aliases=["pull_meeting"], help="Updates discord event with Notion meetings.")
         async def pull_meeting(ctx):
             await self.process_meetings()
             await ctx.send("Discord Event Updated")
+
+        @self.bot.command(name="ip", aliases=["cuneyd_ip"], help="Get the current public IP on Cuneyd's server, no need to bother Cuneyd")
+        async def get_ip(ctx):
+            await self.get_ip(ctx)
+
+        @self.bot.command(name="ipv6", aliases=["cuneyd_ipv6"], help="Get v6 of IP on Cyneyd's server, not sure it's useful at the moment")
+        async def get_ip(ctx):
+            await self.get_ip(ctx,v4=False)
 
     def run(self):
         """Run the bot."""
