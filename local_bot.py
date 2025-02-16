@@ -90,14 +90,12 @@ class LocalBot:
             self.config_file = get_env_var("CONFIG_FILE")
             if (not os.path.exists(self.config_file)) or hard:
                 self.config = {"last_query_time": "2020-01-01T00:00:00.000Z",
-                               "meeting_dict": {},
-                               "ip_address": ""}
+                               "meeting_dict": {}}
             else:
                 with open(self.config_file, "r") as file:
                     self.config = json.load(file)
                     self.config["last_query_time"] = "2020-01-01T00:00:00.000Z"
                     self.config["Meeting_dict"] = {}
-                    self.config["ip_address"] = ""
             self.update_config()
 
             self.valid = True
@@ -237,10 +235,6 @@ class LocalBot:
             else:
                 received_ip = requests.get("https://ifconfig.me").text.strip()
             await ctx.send(received_ip)
-            if not "ip_address" not in self.config or received_ip != self.config["ip_address"]:
-                self.config["ip_address"] = received_ip
-                self.update_config()
-            await ctx.send(self.config["ip_address"])
         except Exception as e:
             await ctx.send(f"Error fetching public IP Contact Bill or Cuneyd")
 
@@ -294,5 +288,3 @@ class LocalBot:
 
 if __name__ == "__main__":
     bot = LocalBot()
-    # bot.reset(False)
-    bot.process_meetings()
