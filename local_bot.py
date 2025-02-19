@@ -7,18 +7,10 @@ import os
 
 from discord.ext import commands
 from dotenv import load_dotenv
-from util.util import get_env_var, get_notion_url, get_discord_event_url, get_discord_channels_url
+from util.util import get_env_var, get_notion_url, get_discord_event_url
 from datetime import datetime, timezone, timedelta
 
-
-def check_valid(func):
-    def wrapper(self, *args, **kwargs):
-        if not self.valid:
-            raise ValueError(f"{self.__class__.__name__} instance is not valid.")
-        return func(self, *args, **kwargs)
-
-    return wrapper
-
+EXCLUDED_COMMANDS = ["help", "about"]
 
 class LocalBot:
     def __init__(self, command_prefix="c!"):
@@ -64,6 +56,21 @@ class LocalBot:
 
         self.add_listeners()
         self.add_commands()
+
+        self.bot.check(self.global_check)
+
+    async def global_check(self, ctx):
+        if not self.valid:
+            raise commands.CheckFailure("The bot is not valid at the moment")
+
+        if ctx.command.name in EXCLUDED_COMMANDS or (ctx.guild and ctx.author == ctx.guild.owner):
+            return True
+
+        allowed_roles = ["Dev"]
+        if any(role.name in allowed_roles for role in ctx.author.roles):
+            return True
+        else:
+            raise commands.CheckFailure("You do not have permission to use this command")
 
     def reset(self, hard: bool = False):
         self.valid = False
@@ -162,7 +169,6 @@ class LocalBot:
             print(f"Error creating event: {response.status_code}, {response.text}")
             return None
 
-    @check_valid
     async def process_meetings(self):
         """Process meetings from Notion and create Discord events."""
         current_time = datetime.now()
@@ -236,7 +242,10 @@ class LocalBot:
                 received_ip = requests.get("https://ifconfig.me").text.strip()
             await ctx.send(received_ip)
         except Exception as e:
-            await ctx.send(f"Error fetching public IP Contact Bill or Cuneyd")
+            await ctx.send("Error fetching public IP Contact Bill or Cuneyd")
+
+    async def get_about(self, ctx):
+        await ctx.send("Welcome to Lunaboot Studio")
 
     def clean_meeting_dict(self, current_time):
         meeting_dict: Dict = self.config["meeting_dict"]
@@ -263,6 +272,8 @@ class LocalBot:
             """Handle command errors."""
             if isinstance(error, commands.CommandNotFound):
                 await ctx.send(f"Command not found. Use `{self.bot.command_prefix}help` to see available commands.")
+            elif isinstance(error, commands.CheckFailure):
+                await ctx.send(str(error))
             else:
                 await ctx.send(f"An error occurred: {error}")
 
@@ -279,6 +290,25 @@ class LocalBot:
         @self.bot.command(name="ipv6", aliases=["cuneyd_ipv6"], help="Get v6 of IP on Cyneyd's server, not sure it's useful at the moment")
         async def get_ip(ctx):
             await self.get_ip(ctx,v4=False)
+
+        @self.bot.command(name="about", help="Displays information about Lunaboot Studios")
+        async def get_about(ctx):
+            await self.get_about(ctx)
+
+        @self.bot.command(name="help")
+        async def custom_help(self, ctx):
+            embed = discord.Embed(title="Bot Commands", description="Here are the commands you can use:",
+                                  color=discord.Color.blue())
+
+            for command in self.bot.commands:
+                try:
+                    if await command.can_run(ctx):  # Check if user has permission for the command
+                        embed.add_field(name=f"!{command.name}", value=command.help or "No description",
+                                        inline=False)
+                except commands.CheckFailure:
+                    pass
+
+            await ctx.send(embed=embed)
 
     def run(self):
         """Run the bot."""
