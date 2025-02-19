@@ -19,7 +19,7 @@ class LocalBot:
         intents = discord.Intents.all()
 
         self.command_prefix = command_prefix
-        self.bot = commands.Bot(command_prefix=command_prefix, intents=intents)
+        self.bot = commands.Bot(command_prefix=command_prefix, intents=intents, help_command=None)
 
         try:
             load_dotenv()
