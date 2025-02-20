@@ -303,7 +303,7 @@ class LocalBot:
             for command in self.bot.commands:
                 try:
                     if await command.can_run(ctx):  # Check if user has permission for the command
-                        embed.add_field(name=f"!{command.name}", value=command.help or "No description",
+                        embed.add_field(name=f"c!{command.name}", value=command.help or "No description",
                                         inline=False)
                 except commands.CheckFailure:
                     pass
