@@ -16,4 +16,4 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # Run the file
-py main.py
+python3 main.py
