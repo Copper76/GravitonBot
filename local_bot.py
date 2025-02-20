@@ -296,7 +296,7 @@ class LocalBot:
             await self.get_about(ctx)
 
         @self.bot.command(name="help")
-        async def custom_help(self, ctx):
+        async def custom_help(ctx):
             embed = discord.Embed(title="Bot Commands", description="Here are the commands you can use:",
                                   color=discord.Color.blue())
 
