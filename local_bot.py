@@ -66,7 +66,7 @@ class LocalBot:
         if ctx.command.name in EXCLUDED_COMMANDS or (ctx.guild and ctx.author == ctx.guild.owner):
             return True
 
-        allowed_roles = ["Dev"]
+        allowed_roles = ["Dev Team"]
         if any(role.name in allowed_roles for role in ctx.author.roles):
             return True
         else:
