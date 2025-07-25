@@ -196,7 +196,7 @@ class TaskListView(discord.ui.View):
             self.page -= 1
             self.update_buttons()
             embed = self.get_embed()
-            await interaction.response.edit_message(embed=embed, view=self, ephemeral=True)
+            await interaction.response.edit_message(embed=embed, view=self)
     
     async def next_page(self, interaction: discord.Interaction):
         max_page = (len(self.tasks) - 1) // self.tasks_per_page
@@ -204,7 +204,7 @@ class TaskListView(discord.ui.View):
             self.page += 1
             self.update_buttons()
             embed = self.get_embed()
-            await interaction.response.edit_message(embed=embed, view=self, ephemeral=True)
+            await interaction.response.edit_message(embed=embed, view=self)
     
     # async def back_to_overview(self, interaction: discord.Interaction):
     #     await interaction.response.defer()
