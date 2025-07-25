@@ -44,7 +44,8 @@ class SprintDashboardView(discord.ui.View):
         embed = view.get_embed()
         embed.color = discord.Color.green()
         
-        await interaction.response.edit_message(embed=embed, view=view)
+        # Send as ephemeral so only the user who clicked sees it
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
     
     @discord.ui.button(label="In Progress Tasks", style=discord.ButtonStyle.primary, emoji="🔄")
     async def in_progress_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -57,7 +58,8 @@ class SprintDashboardView(discord.ui.View):
         embed = view.get_embed()
         embed.color = discord.Color.blue()
         
-        await interaction.response.edit_message(embed=embed, view=view)
+        # Send as ephemeral so only the user who clicked sees it
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
     
     @discord.ui.button(label="Blocked Tasks", style=discord.ButtonStyle.danger, emoji="🚫")
     async def blocked_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -70,35 +72,9 @@ class SprintDashboardView(discord.ui.View):
         embed = view.get_embed()
         embed.color = discord.Color.red()
         
-        await interaction.response.edit_message(embed=embed, view=view)
-    
-    async def create_back_callback(self, interaction):
-            # Recreate the main sprint overview
-            embed = discord.Embed(
-                title=f"Sprint Overview",
-                description="Click a button below to view tasks in that category:",
-                color=discord.Color.blue()
-            )
-            
-            embed.add_field(
-                name="✅ Completed",
-                value=f"{len(self.completed_tasks)} tasks",
-                inline=True
-            )
-            
-            embed.add_field(
-                name="🔄 In Progress", 
-                value=f"{len(self.in_progress_tasks)} tasks",
-                inline=True
-            )
-            
-            embed.add_field(
-                name="🚫 Blocked",
-                value=f"{len(self.blocked_tasks)} tasks", 
-                inline=True
-            )
-            
-            await interaction.response.edit_message(embed=embed, view=self)
+        # Send as ephemeral so only the user who clicked sees it
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
 
 class TaskListView(discord.ui.View):
     def __init__(self, tasks: list, title: str, emoji: str, page: int = 0, dashboard_view: SprintDashboardView = None):
@@ -138,14 +114,14 @@ class TaskListView(discord.ui.View):
                 next_button.callback = self.next_page
                 self.add_item(next_button)
         
-        # Add back button (always present)
-        back_button = discord.ui.Button(
-            label="← Back to Sprint Overview",
-            style=discord.ButtonStyle.primary,
-            custom_id="back"
-        )
-        back_button.callback = self.back_to_overview
-        self.add_item(back_button)
+        # # Add back button (always present)
+        # back_button = discord.ui.Button(
+        #     label="← Back to Sprint Overview",
+        #     style=discord.ButtonStyle.primary,
+        #     custom_id="back"
+        # )
+        # back_button.callback = self.back_to_overview
+        # self.add_item(back_button)
     
     def get_embed(self):
         start_idx = self.page * self.tasks_per_page
@@ -220,7 +196,7 @@ class TaskListView(discord.ui.View):
             self.page -= 1
             self.update_buttons()
             embed = self.get_embed()
-            await interaction.response.edit_message(embed=embed, view=self)
+            await interaction.response.edit_message(embed=embed, view=self, ephemeral=True)
     
     async def next_page(self, interaction: discord.Interaction):
         max_page = (len(self.tasks) - 1) // self.tasks_per_page
@@ -228,14 +204,39 @@ class TaskListView(discord.ui.View):
             self.page += 1
             self.update_buttons()
             embed = self.get_embed()
-            await interaction.response.edit_message(embed=embed, view=self)
+            await interaction.response.edit_message(embed=embed, view=self, ephemeral=True)
     
-    async def back_to_overview(self, interaction: discord.Interaction):
-        if self.dashboard_view:
-            # Return to the main sprint dashboard
-            await self.dashboard_view.create_back_callback(interaction)
-        else:
-            await interaction.response.send_message("No Overview", ephemeral=True)
+    # async def back_to_overview(self, interaction: discord.Interaction):
+    #     await interaction.response.defer()
+    #     if self.dashboard_view:
+    #         # Create a new ephemeral overview instead of editing the original
+    #         embed = discord.Embed(
+    #             title=f"Sprint Overview",
+    #             description="Click a button below to view tasks in that category:",
+    #             color=discord.Color.blue()
+    #         )
+            
+    #         embed.add_field(
+    #             name="✅ Completed",
+    #             value=f"{len(self.dashboard_view.completed_tasks)} tasks",
+    #             inline=True
+    #         )
+            
+    #         embed.add_field(
+    #             name="🔄 In Progress", 
+    #             value=f"{len(self.dashboard_view.in_progress_tasks)} tasks",
+    #             inline=True
+    #         )
+            
+    #         embed.add_field(
+    #             name="🚫 Blocked",
+    #             value=f"{len(self.dashboard_view.blocked_tasks)} tasks", 
+    #             inline=True
+    #         )
+            
+    #         await interaction.response.edit_message(embed=embed, view=self.dashboard_view)
+    #     else:
+    #         await interaction.response.send_message("No Overview", ephemeral=True)
 
 
 class SprintUpdateView(discord.ui.View):
