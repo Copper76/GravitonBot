@@ -348,6 +348,11 @@ class LocalBot:
                 
                 fake_ctx = FakeContext(channel, self.bot)
                 
+                # Mention Dev Team for the weekly sprint update
+                dev_team_role = discord.utils.get(fake_ctx.guild.roles, name="Dev Team")
+                role_mention = dev_team_role.mention if dev_team_role else "@Dev Team"
+                await fake_ctx.send(f"{role_mention} Weekly sprint update time! 📊")
+                
                 await self.get_sprint_dashboard(fake_ctx)
                 
                 await asyncio.sleep(2)
