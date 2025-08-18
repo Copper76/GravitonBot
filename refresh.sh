@@ -33,10 +33,4 @@ pids=$(pgrep -f "python3 .*${PY_MAIN}" || true)
 echo "[refresh] Starting bot…"
 nohup python3 "$PY_MAIN" > "$LOG_FILE" 2>&1 &
 
-echo "[refresh] Done (PID $!)"
-EOF
-
-chmod +x /home/user/GravitonBot/refresh.sh
 echo "Bot started with PID $!"
-
-ssh -i ./github_actions_ed25519 user@137.220.103.18 'echo ok && whoami && hostname'
