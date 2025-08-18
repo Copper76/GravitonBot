@@ -1,34 +1,42 @@
 #!/bin/bash
+set -euo pipefail
 
-# Define process name for identifying running bot instances
-PROCESS_NAME="main.py"
+APP_DIR="/home/user/GravitonBot"
+VENV_DIR="$APP_DIR/venv"
+PY_MAIN="main.py"
+BRANCH="master"
+LOG_FILE="$APP_DIR/bot.log"
 
-# Fetch the latest change
-echo "Fetching latest changes from Git..."
-git fetch
+cd "$APP_DIR"
 
-# Move to master branch
-echo "Switching to master branch..."
-git checkout master
+echo "[refresh] Fetching…"
+git fetch --all
 
-# Pull the latest changes
-echo "Pulling latest changes..."
-git pull
+echo "[refresh] Checkout $BRANCH…"
+git checkout "$BRANCH"
 
-# Activate virtual environment
-echo "Activating virtual environment..."
-source venv/bin/activate
+echo "[refresh] Reset hard to origin/$BRANCH…"
+git reset --hard "origin/$BRANCH"
 
-# Install additional requirements
-echo "Installing Python dependencies..."
+echo "[refresh] Activating venv…"
+# shellcheck disable=SC1091
+source "$VENV_DIR/bin/activate"
+
+echo "[refresh] Installing deps…"
+pip install --upgrade pip
 pip install -r requirements.txt
 
-# Kill existing bot instances
-echo "Stopping existing bot instances..."
-pkill -f "$PROCESS_NAME"
+echo "[refresh] Stopping existing bot…"
+pids=$(pgrep -f "python3 .*${PY_MAIN}" || true)
+[[ -n "${pids}" ]] && kill ${pids} || true
 
-# Start the bot in the background with nohup
-echo "Starting new bot instance..."
-nohup python3 main.py > bot.log 2>&1 &
+echo "[refresh] Starting bot…"
+nohup python3 "$PY_MAIN" > "$LOG_FILE" 2>&1 &
 
+echo "[refresh] Done (PID $!)"
+EOF
+
+chmod +x /home/user/GravitonBot/refresh.sh
 echo "Bot started with PID $!"
+
+ssh -i ./github_actions_ed25519 user@137.220.103.18 'echo ok && whoami && hostname'
