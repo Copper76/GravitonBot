@@ -10,4 +10,4 @@ echo "[refresh] Stopping existing bot…"
 pids=$(pgrep -f "python3 .*${PY_MAIN}" || true)
 [[ -n "${pids}" ]] && kill ${pids} || true
 
-echo "Killed Botwith PID $!"
+echo "Killed Bot"

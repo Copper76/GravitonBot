@@ -18,6 +18,4 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script_stop: true
           script: |
-            echo "Current directory: $(pwd)"
-            echo "Executing command: bash ${{ secrets.REFRESH_SCRIPT }} ${{ secrets.APP_DIR }}"
             bash ${{ secrets.REFRESH_SCRIPT }} ${{ secrets.APP_DIR }}

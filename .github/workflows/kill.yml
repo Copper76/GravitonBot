@@ -16,6 +16,4 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script_stop: true
           script: |
-            echo "Current directory: $(pwd)"
-            echo "Executing command: bash ${{ secrets.KILL_SCRIPT }} ${{ secrets.APP_DIR }}"
             bash ${{ secrets.KILL_SCRIPT }} ${{ secrets.APP_DIR }}
