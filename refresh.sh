@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-APP_DIR="/home/user/GravitonBot"
+APP_DIR="$1"
 VENV_DIR="$APP_DIR/venv"
 PY_MAIN="main.py"
 BRANCH="master"

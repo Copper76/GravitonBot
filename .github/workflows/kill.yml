@@ -1,4 +1,4 @@
-name: Refresh GravitonBot
+name: Kill GravitonBot
 
 on:
   push:
@@ -6,10 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  refresh:
+  kill:
     runs-on: ubuntu-latest
     steps:
-      - name: Refresh via SSH
+      - name: Kill via SSH
         uses: appleboy/ssh-action@v1.1.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -18,4 +18,4 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script_stop: true
           script: |
-            bash ${{ secrets.REFRESH_SCRIPT }} ${{ secrets.APP_DIR }}
+            bash ${{ secrets.Kill_SCRIPT }} ${{ secrets.APP_DIR }}
